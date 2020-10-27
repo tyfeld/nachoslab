@@ -19,6 +19,7 @@
 #include "switch.h"
 #include "synch.h"
 #include "system.h"
+#include "unistd.h"  //add getuid() function
 
 #define STACK_FENCEPOST 0xdeadbeef	// this is put at the top of the
 					// execution stack, for detecting 
@@ -41,6 +42,10 @@ Thread::Thread(char* threadName)
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
+
+    //initialize pid,uid
+    pid = pidAllocate();
+    uid = getuid();
 }
 
 //----------------------------------------------------------------------
@@ -62,6 +67,9 @@ Thread::~Thread()
     ASSERT(this != currentThread);
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
+
+    //clean pid
+    pids[pid] = 0;
 }
 
 //----------------------------------------------------------------------
@@ -318,3 +326,41 @@ Thread::RestoreUserState()
 	machine->WriteRegister(i, userRegisters[i]);
 }
 #endif
+
+//----------------------------------------------------------------------
+// Thread::getpid
+// Get the process id of the current thread.
+//----------------------------------------------------------------------
+
+int 
+Thread::getpid()
+{
+    return pid;
+}
+
+//----------------------------------------------------------------------
+// Thread::getuid
+// Get the process id of the current thread.
+//----------------------------------------------------------------------
+
+int 
+Thread::getuid()
+{
+    return uid;
+}
+
+//----------------------------------------------------------------------
+// Thread::pidAllocate
+// Allocate a certain pid to the current thread.
+//----------------------------------------------------------------------
+
+int
+Thread::pidAllocate()
+{
+    for (int i = 0; i < MaxThreads; i++){
+        if (pids[i] == 0){
+            pids[i] = 1;
+            return i;
+        }
+    }
+}

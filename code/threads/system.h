@@ -50,3 +50,8 @@ extern PostOffice* postOffice;
 #endif
 
 #endif // SYSTEM_H
+
+//add max threads and initialize
+
+#define MaxThreads 128
+extern int pids[MaxThreads];

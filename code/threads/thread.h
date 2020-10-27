@@ -79,6 +79,8 @@ class Thread {
     // THEY MUST be in this position for SWITCH to work.
     int* stackTop;			 // the current stack pointer
     int machineState[MachineStateSize];  // all registers except for stackTop
+    // add pid and uid
+
     int pid;
     int uid;
 
@@ -103,6 +105,12 @@ class Thread {
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
+
+    // add functions that get uid and pid
+    
+    int getpid();
+    int getuid();
+    int pidAllocate();
 
   private:
     // some of the private data for this class is listed above

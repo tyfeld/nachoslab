@@ -18,7 +18,7 @@ Interrupt *interrupt;			// interrupt status
 Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
-
+int pids[MaxThreads];
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
 #endif
@@ -91,7 +91,12 @@ Initialize(int argc, char **argv)
     double rely = 1;		// network reliability
     int netname = 0;		// UNIX socket name
 #endif
-    
+    //add threads id initialization
+
+    for (int i = 0; i < MaxThreads; ++i){
+        pids[i] = 0;
+    }
+
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
 	argCount = 1;
 	if (!strcmp(*argv, "-d")) {
