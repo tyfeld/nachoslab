@@ -351,16 +351,21 @@ Thread::getuid()
 
 //----------------------------------------------------------------------
 // Thread::pidAllocate
-// Allocate a certain pid to the current thread.
+// Allocate a certain pid to the current thread. Set the limit to MaxThreads.
 //----------------------------------------------------------------------
 
 int
 Thread::pidAllocate()
 {
-    for (int i = 0; i < MaxThreads; i++){
+    int i;
+    for (i = 0; i < MaxThreads; i++){
         if (pids[i] == 0){
             pids[i] = 1;
             return i;
         }
     }
+    printf("No more threads can be created.  Limit: %d\n", MaxThreads);
+    ASSERT(i<MaxThreads);
+    return -1;
+
 }

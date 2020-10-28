@@ -36,6 +36,10 @@ SimpleThread(int which)
     }
     
 }
+//----------------------------------------------------------------------
+// SimpleThreadTS
+// Print information and then yield.
+//----------------------------------------------------------------------
 
 void
 SimpleThreadTS(int which)
@@ -59,17 +63,13 @@ ThreadTest1()
     Thread *t = new Thread("forked thread");
 
     t->Fork(SimpleThread, 1);
-    //SimpleThread(0);
-    /*Thread *t1 = new Thread("forked thread");
-    Thread *t2 = new Thread("forked thread");
-    Thread *t3 = new Thread("forked thread");
-    Thread *t4 = new Thread("forked thread");
-    t1->Fork(SimpleThread, 1);
-    t2->Fork(SimpleThread, 1);
-    t3->Fork(SimpleThread, 1);
-    t4->Fork(SimpleThread, 1);*/
-
+    SimpleThread(0);
 }
+//----------------------------------------------------------------------
+// ThreadTestTS
+// 	Set up a ping-pong between four threads, by forking a thread 
+//	Then call SimpleThreadTS to print all status and information.
+//----------------------------------------------------------------------
 
 void 
 ThreadTestTS()
@@ -86,6 +86,19 @@ ThreadTestTS()
     //scheduler->Print();
 }
 //----------------------------------------------------------------------
+// ThreadTestMax
+// 	Test the number limit of threads.
+//----------------------------------------------------------------------
+
+void 
+ThreadTestMax()
+{
+    for (int i = 0; i <= MaxThreads; i++){
+        Thread *t = new Thread("for test");
+        printf("*** thread %d created\n", t->getpid());
+    }
+}
+//----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
 //----------------------------------------------------------------------
@@ -99,6 +112,9 @@ ThreadTest()
         break;
     case 2:
         ThreadTestTS();
+        break;
+    case 3:
+        ThreadTestMax();
         break;
     default:
 	    printf("No test specified.\n");
