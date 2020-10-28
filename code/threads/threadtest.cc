@@ -30,11 +30,23 @@ SimpleThread(int which)
     int num;
     
     for (num = 0; num < 5; num++) {
-	printf("*** thread %d looped %d time pid: %d, uid: %d\n", which, num, currentThread->getpid(),currentThread->getuid());
+	printf("*** thread %d looped %d time , uid: %d\n", currentThread->getpid(), num, currentThread->getuid());
         currentThread->Yield();
+        scheduler->Print();
     }
+    
 }
 
+void
+SimpleThread1(int which)
+{
+    printf("thread %d yielding, uid: %d\n", currentThread->getpid(), currentThread->getuid());
+    currentThread->Print();
+    scheduler->Print();
+    currentThread->Yield();
+        
+    
+}
 //----------------------------------------------------------------------
 // ThreadTest1
 // 	Set up a ping-pong between two threads, by forking a thread 
@@ -49,7 +61,7 @@ ThreadTest1()
     Thread *t = new Thread("forked thread");
 
     t->Fork(SimpleThread, 1);
-    SimpleThread(0);
+    //SimpleThread(0);
     /*Thread *t1 = new Thread("forked thread");
     Thread *t2 = new Thread("forked thread");
     Thread *t3 = new Thread("forked thread");
@@ -61,6 +73,17 @@ ThreadTest1()
 
 }
 
+void 
+ThreadTest3()
+{
+    Thread *t1 = new Thread("forked thread");
+    Thread *t2 = new Thread("forked thread");    
+    Thread *t3 = new Thread("forked thread");
+    t1->Fork(SimpleThread1, 0);
+    t2->Fork(SimpleThread1, 0);
+    t3->Fork(SimpleThread1, 0);
+
+}
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -71,15 +94,18 @@ ThreadTest()
 {
     switch (testnum) {
     case 1:
-	ThreadTest1();
-    break;
+	    ThreadTest1();
+        break;
     case 2:
-    ThreadTest1();
-    ThreadTest1();
-	break;
+        ThreadTest1();
+        ThreadTest1();
+	    break;
+    case 3:
+        ThreadTest3();
+        break;
     default:
-	printf("No test specified.\n");
-	break;
+	    printf("No test specified.\n");
+	    break;
     }
 }
 

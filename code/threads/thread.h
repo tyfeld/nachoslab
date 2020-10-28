@@ -58,7 +58,7 @@
 
 // Thread state
 enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
-
+const char* const ThreadStatusChar[] = {"JUST_CREATED","RUNNING","READY","BLOCKED"};
 // external function, dummy routine whose sole job is to call Thread::Print
 extern void ThreadPrint(int arg);	 
 
@@ -104,10 +104,13 @@ class Thread {
 						// overflowed its stack
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
-    void Print() { printf("%s, ", name); }
+    //void Print() { printf("%s, ", name); }
+    void Print(){
+      printf("thread name = %s, uid = %d, tid = %d, status = %s\n", name, uid, pid, ThreadStatusChar[status]);
+    }
 
     // add functions that get uid and pid
-    
+
     int getpid();
     int getuid();
     int pidAllocate();
