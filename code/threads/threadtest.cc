@@ -38,14 +38,12 @@ SimpleThread(int which)
 }
 
 void
-SimpleThread1(int which)
+SimpleThreadTS(int which)
 {
-    printf("thread %d yielding, uid: %d\n", currentThread->getpid(), currentThread->getuid());
+    printf("Thread %d yielding...\n", currentThread->getpid());
     currentThread->Print();
     scheduler->Print();
-    currentThread->Yield();
-        
-    
+    currentThread->Yield();   
 }
 //----------------------------------------------------------------------
 // ThreadTest1
@@ -74,15 +72,18 @@ ThreadTest1()
 }
 
 void 
-ThreadTest3()
+ThreadTestTS()
 {
+    printf("PID \t NAME     \t UID \t STATUS\n");
     Thread *t1 = new Thread("forked thread");
     Thread *t2 = new Thread("forked thread");    
     Thread *t3 = new Thread("forked thread");
-    t1->Fork(SimpleThread1, 0);
-    t2->Fork(SimpleThread1, 0);
-    t3->Fork(SimpleThread1, 0);
-
+    Thread *t4 = new Thread("forked thread");
+    t1->Fork(SimpleThreadTS, 0);
+    t2->Fork(SimpleThreadTS, 0);
+    t3->Fork(SimpleThreadTS, 0);
+    t4->Fork(SimpleThreadTS, 0);
+    //scheduler->Print();
 }
 //----------------------------------------------------------------------
 // ThreadTest
@@ -97,11 +98,7 @@ ThreadTest()
 	    ThreadTest1();
         break;
     case 2:
-        ThreadTest1();
-        ThreadTest1();
-	    break;
-    case 3:
-        ThreadTest3();
+        ThreadTestTS();
         break;
     default:
 	    printf("No test specified.\n");

@@ -106,7 +106,8 @@ class Thread {
     char* getName() { return (name); }
     //void Print() { printf("%s, ", name); }
     void Print(){
-      printf("thread name = %s, uid = %d, tid = %d, status = %s\n", name, uid, pid, ThreadStatusChar[status]);
+      //printf("Thread pid: %d name: %s, uid: %d, status: %s\n", pid, name, uid,  ThreadStatusChar[status]);
+      printf("%d \t %s \t %d \t %s\n", pid, name, uid,  ThreadStatusChar[status]);
     }
 
     // add functions that get uid and pid
