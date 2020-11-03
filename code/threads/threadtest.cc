@@ -30,9 +30,10 @@ SimpleThread(int which)
     int num;
     
     for (num = 0; num < 5; num++) {
-	printf("*** thread %d looped %d time , uid: %d\n", currentThread->getpid(), num, currentThread->getuid());
-        currentThread->Yield();
-        scheduler->Print();
+	//printf("*** thread %d looped %d time , uid: %d\n", currentThread->getpid(), num, currentThread->getuid());
+	    printf("*** thread %d looped %d time, priority: %d\n", currentThread->getpid(), num, currentThread->getPriority());
+        //currentThread->Yield();
+        //scheduler->Print();
     }
     
 }
@@ -48,6 +49,39 @@ SimpleThreadTS(int which)
     currentThread->Print();
     scheduler->Print();
     currentThread->Yield();   
+}
+//----------------------------------------------------------------------
+// SimpleThreadPree
+// Fork another thread in the first cycle.
+//----------------------------------------------------------------------
+
+void
+SimpleThreadPree(int which)
+{
+    int num;
+    for (num = 0; num < 5; num++){
+        if (num==0){
+            Thread *t2 = new Thread("for test", 1);
+            t2->Fork(SimpleThread,0);
+        }
+        printf("*** thread %d looped %d time, priority: %d\n", currentThread->getpid(), num, currentThread->getPriority());
+    }
+}
+//----------------------------------------------------------------------
+// SimpleThreadRR
+// Fork another thread in the first cycle.
+//----------------------------------------------------------------------
+
+void
+SimpleThreadRR(int which)
+{
+    int num;
+    for (num = 0; num < 15; num++){
+        printf("*** thread %d looped %d time, priority: %d, time: %d\n", 
+        currentThread->getpid(), num, currentThread->getPriority(), stats->totalTicks);
+        interrupt->SetLevel(IntOn);
+        interrupt->SetLevel(IntOff);
+    }
 }
 //----------------------------------------------------------------------
 // ThreadTest1
@@ -85,6 +119,8 @@ ThreadTestTS()
     t4->Fork(SimpleThreadTS, 0);
     //scheduler->Print();
 }
+
+
 //----------------------------------------------------------------------
 // ThreadTestMax
 // 	Test the number limit of threads.
@@ -98,6 +134,49 @@ ThreadTestMax()
         printf("*** thread %d created\n", t->getpid());
     }
 }
+
+//----------------------------------------------------------------------
+// ThreadTestPri
+// 	Test priority scheduler.
+//----------------------------------------------------------------------
+
+void 
+ThreadTestPri()
+{
+    Thread *t1 = new Thread("for test", 3);
+    t1->Fork(SimpleThread,0);
+    Thread *t2 = new Thread("for test", 7);
+    t2->Fork(SimpleThread,0);
+    Thread *t3 = new Thread("for test", 5);
+    t3->Fork(SimpleThread,0);
+}
+//----------------------------------------------------------------------
+// ThreadTestPree
+// 	Test preemtive algorithm.
+//----------------------------------------------------------------------
+
+void 
+ThreadTestPree()
+{
+    Thread *t1 = new Thread("for test", 3);
+    t1->Fork(SimpleThreadPree,0);
+}
+//----------------------------------------------------------------------
+// ThreadTestRR
+// 	Test Round Robin
+//----------------------------------------------------------------------
+
+void
+ThreadTestRR()
+{
+    Thread *t1 = new Thread("test RR");
+    Thread *t2 = new Thread("test RR");
+    Thread *t3 = new Thread("test RR");
+    t1->Fork(SimpleThreadRR,0);
+    t2->Fork(SimpleThreadRR,0);
+    t3->Fork(SimpleThreadRR,0);
+}
+
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -115,6 +194,15 @@ ThreadTest()
         break;
     case 3:
         ThreadTestMax();
+        break;
+    case 4:
+        ThreadTestPri();
+        break;
+    case 5:
+        ThreadTestPree();
+        break;
+    case 6:
+        ThreadTestRR();
         break;
     default:
 	    printf("No test specified.\n");

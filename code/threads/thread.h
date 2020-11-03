@@ -85,7 +85,7 @@ class Thread {
     int uid;
 
   public:
-    Thread(char* debugName);		// initialize a Thread 
+    Thread(char* debugName, int pri = 0);		// initialize a Thread with priority
     ~Thread(); 				// deallocate a Thread
 					// NOTE -- thread being deleted
 					// must not be running when delete 
@@ -115,6 +115,8 @@ class Thread {
     int getpid();
     int getuid();
     int pidAllocate();
+    int getPriority();
+    ThreadStatus getStatus();
 
   private:
     // some of the private data for this class is listed above
@@ -129,6 +131,7 @@ class Thread {
     					// Allocate a stack for thread.
 					// Used internally by Fork()
 
+    int priority;   // Priority of the thread
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
 // one for its state while executing user code, one for its state 

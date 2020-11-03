@@ -33,7 +33,7 @@
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread(char* threadName)
+Thread::Thread(char* threadName, int pri)
 {
     name = threadName;
     stackTop = NULL;
@@ -46,6 +46,8 @@ Thread::Thread(char* threadName)
     //initialize pid,uid
     pid = pidAllocate();
     uid = getuid();
+
+    priority = pri;
 }
 
 //----------------------------------------------------------------------
@@ -188,7 +190,7 @@ Thread::Yield ()
     ASSERT(this == currentThread);
     
     DEBUG('t', "Yielding thread \"%s\"\n", getName());
-    
+    //scheduler->ReadyToRun(this);
     nextThread = scheduler->FindNextToRun();
     if (nextThread != NULL) {
 	scheduler->ReadyToRun(this);
@@ -368,4 +370,20 @@ Thread::pidAllocate()
     ASSERT(i<MaxThreads);
     return -1;
 
+}
+//----------------------------------------------------------------------
+// Thread::getPriority
+// Return the priority value of the thread.
+//----------------------------------------------------------------------
+
+int
+Thread::getPriority()
+{
+    return priority;
+}
+
+ThreadStatus
+Thread::getStatus()
+{
+    return status;
 }
