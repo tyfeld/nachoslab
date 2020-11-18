@@ -11,6 +11,7 @@
 
 #include "copyright.h"
 #include "system.h"
+#include "synch.h"
 
 // testnum is set in main.cc
 int testnum = 1;
@@ -82,6 +83,113 @@ SimpleThreadRR(int which)
         interrupt->SetLevel(IntOn);
         interrupt->SetLevel(IntOff);
     }
+}
+
+//----------------------------------------------------------------------
+// Producer & Consumer Problem implemented by semaphores.
+//----------------------------------------------------------------------
+
+int N = 6;
+Semaphore* empty = new Semaphore("empty",N);
+Semaphore* full = new Semaphore("full",0);
+Semaphore* mutex = new Semaphore("mutex", 1);
+int numSema = 0;
+void ProducerSema(int val)
+{
+    for (int i = 0; i < val; i++)
+    {
+        empty->P();
+        mutex->P();
+        if(numSema >= N){ 
+    	    printf("Buffer is full, waiting for consumers.\n");
+        }
+        else {
+            printf("%s produced 1 item, items in buffer changed from %d to %d\n",currentThread->getName(),numSema,numSema+1);
+            ++numSema;
+        }
+        mutex->V();
+        full->V();
+    }
+}
+
+void ConsumerSema(int val)
+{
+    for (int i = 0; i < val; i++)
+    {
+        full->P();
+        mutex->P();
+        if(numSema <= 0){ 
+    	    printf("Buffer is empty, waiting for producers.\n");
+        }
+        else {
+            printf("%s consume 1 item, items in buffer changed from %d to %d\n",currentThread->getName(),numSema,numSema-1);
+            --numSema;
+        }
+        mutex->V();
+        empty->V();
+    }
+}
+//----------------------------------------------------------------------
+// Producer & Consumer Problem implemented by conditional variables.
+//----------------------------------------------------------------------
+
+Lock* pcLock = new Lock("PCLock");
+Condition* notempty = new Condition("NotEmpty");
+Condition* notfull = new Condition("Notfull");
+int numCond = 0;
+void ProducerCond(int val)
+{
+    for (int i = 0; i < val; i++)
+    {
+        pcLock->Acquire();
+        while(numCond == N) {
+    	    printf("Buffer is full, waiting for consumers.\n");
+            notfull->Wait(pcLock);
+        }
+        printf("%s produced 1 item, items in buffer changed from %d to %d\n",currentThread->getName(),numCond,numCond+1);
+        ++numCond;
+        notempty->Signal(pcLock);
+        pcLock->Release();
+    }
+}
+void ConsumerCond(int val)
+{
+    for (int i = 0; i < val; i++)
+    {
+        pcLock->Acquire();
+        while(numCond == 0) {
+    	    printf("Buffer is empty, waiting for producers.\n");
+            notempty->Wait(pcLock);
+        }
+        printf("%s consumed 1 item, items in buffer changed from %d to %d\n",currentThread->getName(),numCond,numCond-1);
+        --numCond;
+        notfull->Signal(pcLock);
+        pcLock->Release();
+    }
+}
+
+// Implementing Barrier.
+Condition* barrier = new Condition("barrier");
+Lock* barrLock = new Lock("barrLock");
+int barrierCnt = 0;
+const int barrierLimit = 6;
+
+void Barrier(int val)
+{
+    barrLock->Acquire();
+    barrierCnt++;
+    if(barrierCnt < barrierLimit)
+    {
+        printf("Waiting for more... Present threads: %d, Barrier threads: %d\n",barrierCnt,barrierLimit);
+        barrier->Wait(barrLock);
+    }
+    else //meet barrier
+    {
+        printf("Meeting Barrier Now! Waking all waiting threads.\n");
+        barrier->Broadcast(barrLock);
+    }   
+    barrLock->Release();
+    printf("Thread %d continue to run.\n", val);
 }
 //----------------------------------------------------------------------
 // ThreadTest1
@@ -176,6 +284,51 @@ ThreadTestRR()
     t2->Fork(SimpleThreadRR,0);
     t3->Fork(SimpleThreadRR,0);
 }
+//----------------------------------------------------------------------
+// ThreadTestPCSema
+// Producers & Consumers Problem implemented by semaphores.
+//---------------------------------------------------------------------
+
+void 
+ThreadTestPCSema()
+{
+    Thread* t1 = new Thread("Producer");
+    Thread* t2 = new Thread("Consumer1");
+    Thread* t3 = new Thread("Consumer2");
+    t1->Fork(ProducerSema,12);
+    t2->Fork(ConsumerSema,6);
+    t3->Fork(ConsumerSema,6);
+}
+
+//----------------------------------------------------------------------
+// ThreadTestPCCond
+// Producers & Consumers Problem implemented by Conditional variables.
+//---------------------------------------------------------------------
+
+void 
+ThreadTestPCCond()
+{
+    Thread* t1 = new Thread("Producer");
+    Thread* t2 = new Thread("Consumer1");
+    Thread* t3 = new Thread("Consumer2");
+    t1->Fork(ProducerCond,12);
+    t2->Fork(ConsumerCond,6);
+    t3->Fork(ConsumerCond,6);
+}
+//----------------------------------------------------------------------
+// ThreadTestBarrier
+// Implementing barrier by Conditional variables.
+//---------------------------------------------------------------------
+
+void 
+ThreadTestBarrier()
+{
+    for (int i = 1; i <= barrierLimit; i++)
+    {
+        Thread *t = new Thread("BarrierTest");
+        t -> Fork(Barrier,i);
+    }
+}
 
 //----------------------------------------------------------------------
 // ThreadTest
@@ -203,6 +356,15 @@ ThreadTest()
         break;
     case 6:
         ThreadTestRR();
+        break;
+    case 7:
+        ThreadTestPCSema();
+        break;
+    case 8:
+        ThreadTestPCCond();
+        break;
+    case 9:
+        ThreadTestBarrier();
         break;
     default:
 	    printf("No test specified.\n");
