@@ -24,6 +24,8 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "translate.h"
+#include "machine.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -54,10 +56,91 @@ ExceptionHandler(ExceptionType which)
     int type = machine->ReadRegister(2);
 
     if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
-    } else {
+        DEBUG('T', "TLB Miss Count: %d, Total Translate: %d, TLB Miss Rate: %.2lf%%\n",TLbMissCount, TranslateCount, (double)(TLbMissCount*100)/(TranslateCount)); 
+	    DEBUG('a', "Shutdown, initiated by user program.\n");
+   	    interrupt->Halt();
+    } 
+    else if(which == PageFaultException ){
+        //increase miss count
+        TLbMissCount += 1;
+        if (machine->tlb == NULL){
+            ASSERT(FALSE);
+        }
+        else {
+            DEBUG('m',"TLB MISS!\n");
+            int BadVAddr = machine->ReadRegister(BadVAddrReg);
+            //TLBMissHandlerFIFO(BadVAddr);
+            TLBMissHandlerClock(BadVAddr);
+        }
+        return;
+    }
+    else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
     }
+}
+
+//----------------------------------------------------------------------
+// TLBMissHandlerFIFO 
+// Use FIFO replacement algorithm for tlb miss handler.
+//----------------------------------------------------------------------
+
+void
+TLBMissHandlerFIFO(int virtAddr)
+{
+    int positionFIFO = -1;
+    int pos;
+    unsigned int vpn;
+    vpn = (unsigned) virtAddr / PageSize;
+    //Find empty entry
+    for (pos = 0; pos < TLBSize; pos++){
+        if (machine->tlb[pos].valid == FALSE){
+            positionFIFO = pos;
+            break;
+        }
+    }
+    //FIFO replacing
+    if (positionFIFO == -1){
+        positionFIFO = TLBSize - 1;
+        for (pos = 0; pos < TLBSize-1; pos++){
+            machine->tlb[pos] = machine->tlb[pos+1];
+        }
+    }
+    machine->tlb[positionFIFO] = machine->pageTable[vpn];
+}
+
+
+
+//----------------------------------------------------------------------
+// TLBMissHandlerClock
+// Use Clock replacement algorithm for tlb miss handler.
+//---------------------------------------------------------------------
+
+int clockpoint = 0;
+void
+TLBMissHandlerClock(int virtAddr)
+{
+    unsigned int vpn;
+    vpn = (unsigned) virtAddr / PageSize;
+    while (true)
+    {
+        clockpoint %= TLBSize;
+        if (machine->tlb[clockpoint].valid == FALSE){
+            break;
+        }
+        else
+        {
+        //Second Chance 
+            if (machine->tlb[clockpoint].use)  // R = 1
+            {
+                machine->tlb[clockpoint].use = FALSE;
+                clockpoint += 1;
+            }
+            else { // R = 0
+                break;
+            }
+        } 
+    }
+    machine->tlb[clockpoint] = machine->pageTable[vpn];
+    machine->tlb[clockpoint].use = TRUE;  
 }

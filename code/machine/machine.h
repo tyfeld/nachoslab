@@ -194,6 +194,11 @@ extern void ExceptionHandler(ExceptionType which);
 				// user system calls and exceptions
 				// Defined in exception.cc
 
+extern void TLBMissHandlerFIFO(int virtAddr);
+extern void TLBMissHandlerClock(int virtAddr);
+
+
+
 
 // Routines for converting Words and Short Words to and from the
 // simulated machine's format of little endian.  If the host machine
@@ -212,3 +217,8 @@ unsigned int WordToMachine(unsigned int word);
 unsigned short ShortToMachine(unsigned short shortword);
 
 #endif // MACHINE_H
+
+// Count TLB miss rate
+extern int TLbMissCount;
+extern int TranslateCount;
+
