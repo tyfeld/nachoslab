@@ -55,10 +55,23 @@ ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
 
-    if ((which == SyscallException) && (type == SC_Halt)) {
-        DEBUG('T', "TLB Miss Count: %d, Total Translate: %d, TLB Miss Rate: %.2lf%%\n",TLbMissCount, TranslateCount, (double)(TLbMissCount*100)/(TranslateCount)); 
-	    DEBUG('a', "Shutdown, initiated by user program.\n");
-   	    interrupt->Halt();
+    if (which == SyscallException ) {
+        if (type = SC_Halt){
+            DEBUG('T', "TLB Miss Count: %d, Total Translate: %d, TLB Miss Rate: %.2lf%%\n",TLbMissCount, TranslateCount, (double)(TLbMissCount*100)/(TranslateCount)); 
+            DEBUG('a', "Shutdown, initiated by user program.\n");
+            interrupt->Halt();
+        }
+        else{
+            if (currentThread->space){
+                int nextPc=machine->ReadRegister(NextPCReg);
+                machine->WriteRegister(PCReg,nextPc);
+                machine->ReclaimMem();
+                delete currentThread->space;
+                currentThread->space = NULL;
+                currentThread->Finish();
+                printf("Exit!\n");
+            }
+        }
     } 
     else if(which == PageFaultException ){
         //increase miss count

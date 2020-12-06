@@ -82,3 +82,50 @@ ConsoleTest (char *in, char *out)
 	if (ch == 'q') return;  // if q, quit
     }
 }
+
+//----------------------------------------------------------------------
+// StartTwoProcess
+// 	Run two user programs
+//----------------------------------------------------------------------
+void RunUserProg(int which);
+Thread* AllocateMemForOneThread(OpenFile* executable, char* name);
+void StartTwoProcess(char *filename);
+void
+StartTwoProcess(char *filename)
+{
+    OpenFile *executable = fileSystem->Open(filename);
+    if (executable == NULL) {
+	printf("Unable to open file %s\n", filename);
+	return;
+    }
+    Thread * t1 = AllocateMemForOneThread(executable,"Thread 1");
+    Thread * t2 = AllocateMemForOneThread(executable,"Thread 2");
+
+    delete executable;			// close file
+
+    t1->Fork(RunUserProg, 1);
+    t2->Fork(RunUserProg, 2);
+    currentThread->Yield();
+}
+
+Thread*
+AllocateMemForOneThread(OpenFile* executable, char* name)
+{
+    
+    Thread* thread = new Thread(name,-1);  // Set priority to -1, making thread made prior than main(0), forcing yielding.
+    DEBUG('t',"Creating thread %d\n", thread->getpid());
+    AddrSpace *space;
+    space = new AddrSpace(executable);    
+    thread->space = space;
+    return thread;
+}
+
+void 
+RunUserProg(int which)
+{
+    DEBUG('t',"Running user program thread %d\n", which);
+    currentThread->space->InitRegisters(); 
+    currentThread->space->RestoreState();	
+    machine->Run();
+    ASSERT(FALSE);			
+}

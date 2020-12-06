@@ -182,6 +182,12 @@ class Machine {
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
 
+
+// Add bitmap
+	unsigned int bitmap[NumPhysPages];
+	int AllocateMem();
+	void ReclaimMem();
+
   private:
     bool singleStep;		// drop back into the debugger after each
 				// simulated instruction

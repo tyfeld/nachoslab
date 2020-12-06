@@ -64,6 +64,7 @@ extern void ThreadTest(void), Copy(char *unixFile, char *nachosFile);
 extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
+extern void StartTwoProcess(char *file);
 
 //----------------------------------------------------------------------
 // main
@@ -120,7 +121,11 @@ main(int argc, char **argv)
 	    ASSERT(argc > 1);
             StartProcess(*(argv + 1));
             argCount = 2;
-        } else if (!strcmp(*argv, "-c")) {      // test the console
+        }else if (!strcmp(*argv, "-X")){      // run two threads for a user program
+			StartTwoProcess(*(argv + 1));
+            argCount = 2;
+		}
+		else if (!strcmp(*argv, "-c")) {      // test the console
 	    if (argc == 1)
 	        ConsoleTest(NULL, NULL);
 	    else {

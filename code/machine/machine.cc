@@ -212,3 +212,28 @@ void Machine::WriteRegister(int num, int value)
 	registers[num] = value;
     }
 
+
+int
+Machine::AllocateMem()
+{
+    for (int i = 0; i < NumPhysPages; i++){
+        if (!bitmap[i]){
+            DEBUG('M',"Allocate memory at physical page frame %d\n", i);
+            bitmap[i] = 1;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void
+Machine::ReclaimMem()
+{
+    for (int i =0; i < pageTableSize; i++){
+        if (pageTable[i].valid){
+            int pageFrameNum = pageTable[i].physicalPage;
+            bitmap[pageFrameNum] = 0;
+            DEBUG('M',"Recliam memory at physical page frame %d\n", pageFrameNum);
+        }
+    }
+}
