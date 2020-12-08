@@ -49,7 +49,8 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
-
+void PagefaultHandler(int vpn);
+void TLBMissHandler(int virtAddr);
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -62,6 +63,19 @@ ExceptionHandler(ExceptionType which)
             interrupt->Halt();
         }
         else{
+            printf("Thread exit.\n");
+            printf("Inverted Page Table Info:\n");
+            printf("Physical Page\tvalid\tvpn\tpid\n");
+            for (int i = 0; i < NumPhysPages; i++){
+                printf("%d\t\t", machine->pageTable[i].physicalPage);
+                if (machine->pageTable[i].valid){
+                    printf("FALSE\t");
+                    printf("%d\t%d\n", machine->pageTable[i].virtualPage,machine->pageTable[i].pid);
+                }
+                else{
+                    printf("TRUE\t\t\t\n");
+                }
+            }
             if (currentThread->space){
                 int nextPc=machine->ReadRegister(NextPCReg);
                 machine->WriteRegister(PCReg,nextPc);
@@ -82,8 +96,9 @@ ExceptionHandler(ExceptionType which)
         else {
             DEBUG('m',"TLB MISS!\n");
             int BadVAddr = machine->ReadRegister(BadVAddrReg);
+            
             //TLBMissHandlerFIFO(BadVAddr);
-            TLBMissHandlerClock(BadVAddr);
+            TLBMissHandler(BadVAddr);
         }
         return;
     }
@@ -157,3 +172,84 @@ TLBMissHandlerClock(int virtAddr)
     machine->tlb[clockpoint] = machine->pageTable[vpn];
     machine->tlb[clockpoint].use = TRUE;  
 }
+
+
+//----------------------------------------------------------------------
+// TLBMissHandler
+// Handle tlb miss and page fault.
+//----------------------------------------------------------------------
+
+void
+TLBMissHandler(int virtAddr)
+{
+    unsigned int vpn;
+    vpn = (unsigned) virtAddr / PageSize;
+    if (machine->pageTable[vpn].valid){
+        TLBMissHandlerClock(virtAddr);
+    }
+    else{
+        DEBUG('M',"Page fault with vpn %d!\n", vpn);
+        PagefaultHandler(vpn);
+    }
+}
+
+
+void
+PagefaultHandler(int vpn)
+{
+    int pageFrame = machine->AllocateMem();
+    if (pageFrame == -1){
+        for (int targetvpn1 = 0; targetvpn1 < machine->pageTableSize, targetvpn1 != vpn; targetvpn1++) {
+            if (machine->pageTable[targetvpn1].valid && !machine->pageTable[targetvpn1].dirty) {
+                pageFrame = machine->pageTable[targetvpn1].physicalPage;
+                break;
+            }
+        }
+        if (pageFrame == -1) { 
+            for (int targetvpn2 = 0; targetvpn2 < machine->pageTableSize, targetvpn2 != vpn; targetvpn2++) {
+                if (machine->pageTable[targetvpn2].valid) {
+                    machine->pageTable[targetvpn2].valid = FALSE;
+                    pageFrame = machine->pageTable[targetvpn2].physicalPage;
+                    OpenFile *vm = fileSystem->Open("VM");
+                    vm->WriteAt(&(machine->mainMemory[pageFrame*PageSize]), PageSize, targetvpn2*PageSize);
+                    delete vm;
+                    break;
+                }
+            }
+        }
+    }
+    machine->pageTable[vpn].physicalPage = pageFrame;
+    OpenFile *vm = fileSystem->Open("VM"); 
+    vm->ReadAt(&(machine->mainMemory[pageFrame*PageSize]), PageSize, vpn*PageSize);
+    delete vm; 
+    machine->pageTable[vpn].valid = TRUE;
+    machine->pageTable[vpn].use = FALSE;
+    machine->pageTable[vpn].dirty = FALSE;
+    machine->pageTable[vpn].readOnly = FALSE;
+}
+
+// int PageReplacementAlgo(int vpn)
+// {
+//     int pageFrame = -1;
+//     for (int targetvpn1 = 0; targetvpn1 < machine->pageTableSize, targetvpn1 != vpn; targetvpn1++) {
+//         if (machine->pageTable[targetvpn1].valid) {
+//             if (!machine->pageTable[targetvpn1].dirty) {
+//                 pageFrame = machine->pageTable[targetvpn1].physicalPage;
+//                 break;
+//             }
+//         }
+//     }
+//     if (pageFrame == -1) { 
+//         for (int targetvpn2 = 0; targetvpn2 < machine->pageTableSize, targetvpn2 != vpn; targetvpn2++) {
+//             if (machine->pageTable[targetvpn2].valid) {
+//                 machine->pageTable[targetvpn2].valid = FALSE;
+//                 pageFrame = machine->pageTable[targetvpn2].physicalPage;
+//                 OpenFile *vm = fileSystem->Open("VirtualMemory");
+//                 vm->WriteAt(&(machine->mainMemory[pageFrame*PageSize]), PageSize, targetvpn2*PageSize);
+//                 delete vm;
+//                 break;
+//             }
+//         }
+//     }
+//     return pageFrame;
+// }

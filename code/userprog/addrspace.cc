@@ -86,23 +86,69 @@ AddrSpace::AddrSpace(OpenFile *executable)
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 // first, set up the translation 
+#ifndef INV_PAGE
     pageTable = new TranslationEntry[numPages];
+    printf("shit\n");
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 	//pageTable[i].physicalPage = i;
+#ifdef LAZY_LOADING
+    pageTable[i].physicalPage = 0;
+    pageTable[i].valid = FALSE;
+    printf("shit\n");
+#else
     pageTable[i].physicalPage = machine->AllocateMem();
 	pageTable[i].valid = TRUE;
+    printf("shit\n");
+#endif
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
+    printf("shit\n");
 	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
     }
-    
+#else
+    for (i = 0; i < numPages; i++) {
+        machine->pageTable[i].physicalPage = machine->AllocateMem();
+        machine->pageTable[i].valid = TRUE;
+        machine->pageTable[i].use = FALSE;
+        machine->pageTable[i].dirty = FALSE;
+        machine->pageTable[i].readOnly = FALSE;
+
+        machine->pageTable[i].pid = currentThread->getpid(); 
+    }
+
+#endif
+
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
     bzero(machine->mainMemory, size);
-
+#ifdef LAZY_LOADING
+    bool ifSuccessVM = fileSystem->Create("VM", size);
+    OpenFile *vm = fileSystem->Open("VM");
+    char *vm_temp;
+    vm_temp = new char[size];
+    for (i = 0; i < size; i++)
+        vm_temp[i] = 0;
+    if (noffH.code.size > 0) {
+        DEBUG('a', "\tCopying code segment, at 0x%x, size %d\n",
+              noffH.code.virtualAddr, noffH.code.size);
+        executable->ReadAt(&(vm_temp[noffH.code.virtualAddr]),
+                           noffH.code.size, noffH.code.inFileAddr);
+        vm->WriteAt(&(vm_temp[noffH.code.virtualAddr]),
+                    noffH.code.size, noffH.code.virtualAddr*PageSize);
+    }
+    if (noffH.initData.size > 0) {
+        DEBUG('a', "\tCopying data segment, at 0x%x, size %d\n",
+              noffH.initData.virtualAddr, noffH.initData.size);
+        executable->ReadAt(&(vm_temp[noffH.initData.virtualAddr]),
+                           noffH.initData.size, noffH.initData.inFileAddr);
+        vm->WriteAt(&(vm_temp[noffH.initData.virtualAddr]),
+                    noffH.initData.size, noffH.initData.virtualAddr*PageSize);
+    }
+    delete vm; 
+#else
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
@@ -116,7 +162,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
         executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
-
+#endif
 }
 
 //----------------------------------------------------------------------
@@ -185,6 +231,8 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState() 
 {
+#ifndef INV_PAGE
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+#endif
 }

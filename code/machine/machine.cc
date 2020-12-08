@@ -71,6 +71,18 @@ Machine::Machine(bool debug)
     pageTable = NULL;
 #endif
 
+    
+#ifdef INV_PAGE
+    pageTable = new TranslationEntry[NumPhysPages];
+    for (i = 0; i < NumPhysPages; i++) {
+        pageTable[i].physicalPage = i;
+        pageTable[i].virtualPage = i;
+        pageTable[i].valid = FALSE;
+        pageTable[i].dirty = FALSE;
+        pageTable[i].readOnly = FALSE;
+        pageTable[i].pid = -1;
+    }
+#endif
     singleStep = debug;
     CheckEndian();
 }
@@ -229,6 +241,7 @@ Machine::AllocateMem()
 void
 Machine::ReclaimMem()
 {
+#ifndef INV_PAGE
     for (int i =0; i < pageTableSize; i++){
         if (pageTable[i].valid){
             int pageFrameNum = pageTable[i].physicalPage;
@@ -236,4 +249,15 @@ Machine::ReclaimMem()
             DEBUG('M',"Recliam memory at physical page frame %d\n", pageFrameNum);
         }
     }
+#else
+    for (int i = 0; i < NumPhysPages; i++) {
+        if (pageTable[i].pid == currentThread->getpid()) {
+            if(bitmap[i])
+            {
+                DEBUG('M',"Recliam memory at physical page frame %d\n", i);
+                bitmap[i]=0;
+            }
+        }
+    }
+#endif
 }
