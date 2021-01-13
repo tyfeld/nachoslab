@@ -9,7 +9,7 @@
 # All rights reserved.  See copyright.h for copyright notice and limitation 
 # of liability and disclaimer of warranty provisions.
 
-DEFINES = -DUSER_PROGRAM -DFILESYS_NEEDED -DFILESYS_STUB -DUSE_TLB  -DINV_PAGE
+DEFINES = -DUSER_PROGRAM -DFILESYS_NEEDED -DFILESYS_STUB -DUSE_TLB 
 INCPATH = -I../bin -I../filesys -I../userprog -I../threads -I../machine
 HFILES = $(THREAD_H) $(USERPROG_H)
 CFILES = $(THREAD_C) $(USERPROG_C)
@@ -155,7 +155,10 @@ thread.o: ../threads/thread.cc /usr/include/stdc-predef.h \
  ../filesys/filesys.h ../filesys/openfile.h ../threads/switch.h \
  ../threads/synch.h ../threads/list.h ../threads/system.h \
  ../threads/scheduler.h ../machine/interrupt.h ../threads/list.h \
- ../machine/stats.h ../machine/timer.h
+ ../machine/stats.h ../machine/timer.h /usr/include/unistd.h \
+ /usr/include/i386-linux-gnu/bits/posix_opt.h \
+ /usr/include/i386-linux-gnu/bits/environments.h \
+ /usr/include/i386-linux-gnu/bits/confname.h /usr/include/getopt.h
 utility.o: ../threads/utility.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/utility.h ../threads/bool.h \
  ../machine/sysdep.h ../threads/copyright.h /usr/include/stdio.h \
@@ -188,7 +191,8 @@ threadtest.o: ../threads/threadtest.cc /usr/include/stdc-predef.h \
  ../threads/utility.h ../machine/translate.h ../machine/disk.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
- ../threads/list.h ../machine/stats.h ../machine/timer.h
+ ../threads/list.h ../machine/stats.h ../machine/timer.h \
+ ../threads/synch.h
 interrupt.o: ../machine/interrupt.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../machine/interrupt.h ../threads/list.h \
  ../threads/copyright.h ../threads/utility.h ../threads/bool.h \
@@ -358,7 +362,7 @@ exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../userprog/syscall.h
+ ../userprog/syscall.h ../machine/translate.h
 progtest.o: ../userprog/progtest.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/system.h ../threads/copyright.h \
  ../threads/utility.h ../threads/bool.h ../machine/sysdep.h \

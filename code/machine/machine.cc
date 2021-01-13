@@ -261,3 +261,10 @@ Machine::ReclaimMem()
     }
 #endif
 }
+
+void
+Machine::AdvancePC(){
+	WriteRegister(PrevPCReg,registers[PCReg]);
+	WriteRegister(PCReg,registers[PCReg]+4);
+	WriteRegister(NextPCReg,registers[NextPCReg]+4);
+}
