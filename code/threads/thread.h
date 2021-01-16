@@ -161,3 +161,12 @@ void SWITCH(Thread *oldThread, Thread *newThread);
 }
 
 #endif // THREAD_H
+
+
+struct Message
+{
+  bool valid;      
+  int destination;
+  char* content;
+};
+

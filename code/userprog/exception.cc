@@ -149,8 +149,17 @@ void ExceptionHandler(ExceptionType which)
             int fd = machine->ReadRegister(6);
             char *data = new char[len];
             int res;
-            OpenFile *openfile = (OpenFile *)fd;
-            res = openfile->Read(data, len);
+            if (fd != 0)
+            {
+                OpenFile *openfile = (OpenFile *)fd;
+                result = openfile->Read(data, len);
+            }
+            else
+            {
+                for (int i = 0; i < len; i++)
+                    data[i] = getchar();
+                result = len;
+            }
             for (int i = 0; i < res; i++)
             {
                 machine->WriteMem(address + i, 1, int(data[i]));
@@ -166,10 +175,21 @@ void ExceptionHandler(ExceptionType which)
             int fd = machine->ReadRegister(6);
             char *data = new char[size];
             int value;
+
             for (int i = 0; i < size; i++)
             {
                 machine->ReadMem(buff + i, 1, &value);
                 data[i] = char(value);
+            }
+            if (fd != 1)
+            {
+                OpenFile *openfile = (OpenFile *)fd;
+                openfile->Write(data, len);
+            }
+            else
+            {
+                for (int i = 0; i < len; i++)
+                    putchar(data[i]);
             }
             OpenFile *openfile = (OpenFile *)fd;
             openfile->Write(data, size);
@@ -214,6 +234,16 @@ void ExceptionHandler(ExceptionType which)
             int threadId = machine->ReadRegister(4);
             while (pids[threadId] == true)
                 currentThread->Yield();
+            machine->AdvancePC();
+        }
+        else if (type == SC_Pwd)
+        {
+            system("pwd");
+            machine->AdvancePC();
+        }
+        else if (type == SC_Ls)
+        {
+            system("ls");
             machine->AdvancePC();
         }
     }
